@@ -254,8 +254,8 @@ loader.load(
     tree.scale.z = 0.05;
     //for actual tree
     //tree.translateX(-100);
-    //tree.translateZ(5);
-    //tree.translateY(-100);
+    tree.translateZ(-1);
+    tree.translateY(1);
 
     object.traverse(function(child) {
       if (child instanceof THREE.Mesh) {
