@@ -33,7 +33,8 @@
 		<script src="https://cdn.rawgit.com/mrdoob/three.js/r87/build/three.js"></script>
 		<script src="https://cdn.rawgit.com/mrdoob/three.js/r87/examples/js/vr/WebVR.js"></script>
 		<script src="https://cdn.rawgit.com/dataarts/dat.guiVR/master/build/datguivr.js"></script>
-		<script src="script.js"></script>
+		<script src="OBJLoader.js"></script>
+    <script src="script.js"></script>
 	</head>
 	<body>
 		<script>
@@ -63,6 +64,8 @@ WEBVR.checkAvailability().catch( function( message ){
 //  Regardless, let’s kick off the Three.js basics here:
 
 var camera, scene, renderer, controls
+var tree
+var treeMaterial
 
 
 //  We need a renderer.
@@ -201,6 +204,67 @@ torus.position.set( -0.25, 1.4, -1.5 )
 torus.castShadow    = true
 torus.receiveShadow = true
 scene.add( torus )
+
+//CUBE MAP CODE/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//textures
+//var r = "public/js/Bridge2/";
+//var urls = [r + "posx.jpg", r + "negx.jpg",
+//  r + "posy.jpg", r + "negy.jpg",
+//  r + "posz.jpg", r + "negz.jpg"
+//];
+var urls = [
+  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fposx.jpg?1557524480549",
+  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fnegx.jpg?1557524416837",
+  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fposy.jpg?1557524480260",
+  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fnegy.jpg?1557524480488",
+  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fposz.jpg?1557524480996",
+  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fnegz.jpg?1557524480654"
+];
+textureCube = new THREE.CubeTextureLoader().load(urls);
+textureCube.format = THREE.RGBFormat;
+textureCube.mapping = THREE.CubeReflectionMapping;
+textureCube.encoding = THREE.sRGBEncoding;
+//material
+treeMaterial = new THREE.MeshLambertMaterial({
+  envMap: textureCube,
+  emissive: 0xffffff
+});
+//then you have to go put the treeMaterial for the tree
+//TREE://///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//loading an OBJ
+var loader = new THREE.OBJLoader();
+loader.load(
+  //'JASMIM+MANGA.obj', //tree
+  //"yourMesh.obj", //fox
+  //"starCreature.obj"
+  //NAME OF THE ASSET FROM GLITCH;
+  //the real one
+  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2FstarCreature.obj?1557347759568",
+  //"https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2FProject%20Name.obj?v=1582520829442",
+  //"fatBuddha.obj",
+  //'model.obj',
+  function(object) {
+    //how you turn the tree ON
+    scene.add(object);
+    tree = object;
+
+    //tree.scale(2, 2, 2);
+    //for actual tree
+    //tree.translateX(-100);
+    //tree.translateZ(100);
+    //tree.translateY(-100);
+
+    object.traverse(function(child) {
+      if (child instanceof THREE.Mesh) {
+        child.material = treeMaterial;
+        //meshMaterialTwo
+      }
+    });
+    tree.renderOrder = 0;
+  }
+);
+//TREE://///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 
 //  DAT GUI for WebVR is just one of the coolest things ever.
