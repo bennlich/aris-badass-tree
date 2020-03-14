@@ -268,17 +268,18 @@ const material = new THREE.MeshToonMaterial({
 });
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
       
-//TRANSPARENT MATERIAL///////////////////////////////////////////////////////////////////////////////////
-      meshMaterial = new THREE.MeshStandardMaterial({
-//second level of control at the material level
-color: "rgb(255,255,255)",
-opacity: 0.75,
-transparent: true,
-depthWrite: true
-//roughness: .25,
-//metalness: .91,
-//wireframe: true
-});
+// //TRANSPARENT MATERIAL///////////////////////////////////////////////////////////////////////////////////
+//       meshMaterial = new THREE.MeshStandardMaterial({
+// //second level of control at the material level
+// color: "rgb(255,255,255)",
+// opacity: 0.75,
+// transparent: true,
+// depthWrite: true,
+// side: THREE.DoubleSide
+// //roughness: .25,
+// //metalness: .91,
+// //wireframe: true
+// });
 
       
 //then you have to go put the treeMaterial for the tree
@@ -318,7 +319,7 @@ loader.load(
 
     object.traverse(function(child) {
       if (child instanceof THREE.Mesh) {
-        child.material = meshMaterial;
+        child.material = material;
         //meshMaterialTwo
       }
     });
