@@ -85,7 +85,7 @@ document.body.appendChild( renderer.domElement )
 //  not necessary, but we’re going to attach a “head” to the camera that casts
 //  a shadow so you can see evidence of your own presence.
 
-camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 10 )
+camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 100 )
 scene  = new THREE.Scene()
 scene.add( camera )
 
@@ -253,14 +253,16 @@ loader.load(
     // tree.scale.x = 0.05;
     // tree.scale.y = 0.05;
     // tree.scale.z = 0.05;
+    //person size
+    // tree.translateZ(-1);
+    // tree.translateY(1);
     
-    tree.scale.x = 5;
-    tree.scale.y = 5;
-    tree.scale.z = 5;
-
-    //
-    tree.translateZ(-1);
+    tree.scale.x = 4;
+    tree.scale.y = 4;
+    tree.scale.z = 4;
+    tree.translateZ(-150);
     tree.translateY(1);
+    
 
     object.traverse(function(child) {
       if (child instanceof THREE.Mesh) {
