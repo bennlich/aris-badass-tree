@@ -71,7 +71,7 @@ var treeMaterial
 //  We need a renderer.
 
 renderer = new THREE.WebGLRenderer({ antialias: true })
-renderer.setClearColor( 0xCCCCCC )
+renderer.setClearColor( 0x000000 )
 renderer.setPixelRatio( window.devicePixelRatio )
 renderer.setSize( window.innerWidth, window.innerHeight )
 renderer.vr.enabled  = true
@@ -225,9 +225,14 @@ textureCube = new THREE.CubeTextureLoader().load(urls);
 textureCube.format = THREE.RGBFormat;
 textureCube.mapping = THREE.CubeReflectionMapping;
 textureCube.encoding = THREE.sRGBEncoding;
+//material
+treeMaterial = new THREE.MeshLambertMaterial({
+  envMap: textureCube,
+  emissive: 0xffffff
+  //wireframe: true
+});
       
-      
-      
+//TOON MATERIAL////////////////////////////////////////////////////////////////////////////////////
 //material
 const fiveTone = new THREE.DataTexture(
   Uint8Array.from([
@@ -261,14 +266,21 @@ const material = new THREE.MeshToonMaterial({
   specular: 0xff0000,
   flatShading: false
 });
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+      
+//TRANSPARENT MATERIAL///////////////////////////////////////////////////////////////////////////////////
+      meshMaterial = new THREE.MeshStandardMaterial({
+//second level of control at the material level
+color: "rgb(255,255,255)",
+opacity: 0.75,
+transparent: true,
+depthWrite: true
+//roughness: .25,
+//metalness: .91,
+//wireframe: true
+});
 
       
-//material
-treeMaterial = new THREE.MeshLambertMaterial({
-  envMap: textureCube,
-  emissive: 0xffffff
-  //wireframe: true
-});
 //then you have to go put the treeMaterial for the tree
 //TREE://///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //loading an OBJ
@@ -306,7 +318,7 @@ loader.load(
 
     object.traverse(function(child) {
       if (child instanceof THREE.Mesh) {
-        child.material = material;
+        child.material = meshMaterial;
         //meshMaterialTwo
       }
     });
@@ -448,7 +460,7 @@ function update(){
   
   //rotating the sculpture 
   if (tree != null){
-  //tree.rotation.y += 0.012
+  tree.rotation.y += 0.005
   }
 
 	torus.rotation.y += 0.002
