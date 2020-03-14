@@ -225,10 +225,49 @@ textureCube = new THREE.CubeTextureLoader().load(urls);
 textureCube.format = THREE.RGBFormat;
 textureCube.mapping = THREE.CubeReflectionMapping;
 textureCube.encoding = THREE.sRGBEncoding;
+      
+      
+      
+//material
+const fiveTone = new THREE.DataTexture(
+  Uint8Array.from([
+    0,
+    0,
+    0,
+    64,
+    64,
+    64,
+    128,
+    128,
+    128,
+    192,
+    192,
+    192,
+    255,
+    255,
+    255
+  ]),
+  5,
+  1,
+  THREE.RGBFormat
+);
+fiveTone.needsUpdate = true;
+//emissive, shininess, specular
+const material = new THREE.MeshToonMaterial({
+  gradientMap: fiveTone,
+  color: 0x5588ff,
+  shininess: 25,
+  emissive: 0x022222,
+  specular: 0xff0000,
+  flatShading: false
+});
+
+      
 //material
 treeMaterial = new THREE.MeshLambertMaterial({
   envMap: textureCube,
   emissive: 0xffffff
+  //wireframe: true
 });
 //then you have to go put the treeMaterial for the tree
 //TREE://///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -250,23 +289,24 @@ loader.load(
     tree = object;
 
     //person size
-    // tree.scale.x = 0.05;
-    // tree.scale.y = 0.05;
-    // tree.scale.z = 0.05;
+    tree.scale.x = 0.05;
+    tree.scale.y = 0.05;
+    tree.scale.z = 0.05;
     //person size
-    // tree.translateZ(-1);
-    // tree.translateY(1);
-    
-    tree.scale.x = 4;
-    tree.scale.y = 4;
-    tree.scale.z = 4;
-    tree.translateZ(-150);
+    tree.translateZ(-1);
     tree.translateY(1);
+    
+    //all sorts of weird shit going on
+    // tree.scale.x = 4;
+    // tree.scale.y = 4;
+    // tree.scale.z = 4;
+    // tree.translateZ(-150);
+    // tree.translateY(1);
     
 
     object.traverse(function(child) {
       if (child instanceof THREE.Mesh) {
-        child.material = treeMaterial;
+        child.material = material;
         //meshMaterialTwo
       }
     });
@@ -408,7 +448,7 @@ function update(){
   
   //rotating the sculpture 
   if (tree != null){
-  tree.rotation.y += 0.002
+  //tree.rotation.y += 0.012
   }
 
 	torus.rotation.y += 0.002
