@@ -418,6 +418,7 @@ window.addEventListener( 'vr controller connected', function( event ){
 	scene.add( guiInputHelper )
 
 
+  // BUTTON EVENTS /////////////////////////////////////////////////////////////
 	//  Button events. How easy is this?!
 	//  We’ll just use the “primary” button -- whatever that might be ;)
 	//  Check out the THREE.VRController.supported{} object to see
@@ -433,6 +434,8 @@ window.addEventListener( 'vr controller connected', function( event ){
 		event.target.userData.mesh.material.color.setHex( meshColorOff )
 		guiInputHelper.pressed( false )
 	})
+  
+  ///////////////////////////////////////////////////////////////////////////////
 
 
 	//  Daddy, what happens when we die?
