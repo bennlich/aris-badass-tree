@@ -67,7 +67,6 @@ var camera, scene, renderer, controls
 var tree
 var treeMaterial
 
-
 //  We need a renderer.
 
 renderer = new THREE.WebGLRenderer({ antialias: true })
@@ -425,7 +424,6 @@ window.addEventListener( 'vr controller connected', function( event ){
 	//  all the named buttons we’ve already mapped for you!
 
 	controller.addEventListener( 'primary press began', function( event ){
-
 		event.target.userData.mesh.material.color.setHex( meshColorOn )
 		guiInputHelper.pressed( true )
 	})
@@ -457,6 +455,7 @@ function update(){
 	//  all the VR controller business you need to get done!
 
 	THREE.VRController.update()
+  //THREE.VRController.verbosity = 1
 
 
 	//  And here’s your standard update and render stuff.
