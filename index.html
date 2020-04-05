@@ -64,6 +64,7 @@ WEBVR.checkAvailability().catch( function( message ){
 //  Regardless, let’s kick off the Three.js basics here:
 
 var camera, scene, renderer, controls
+
 var tree
 var treeMaterial
 
@@ -428,7 +429,6 @@ window.addEventListener( 'vr controller connected', function( event ){
 		guiInputHelper.pressed( true )
 	})
 	controller.addEventListener( 'primary press ended', function( event ){
-
 		event.target.userData.mesh.material.color.setHex( meshColorOff )
 		guiInputHelper.pressed( false )
 	})
