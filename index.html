@@ -1,192 +1,183 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>VRController for Three.js (WebVR)</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-		<style>
-			
-			body {
-
-				margin: 0;
-				overflow: hidden;
-				font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-				font-size:   13px;
-				line-height: 20px;
-			}
-			header {
-
-				position: absolute;
-				top:  10px; 
-				left: 10px;
-				background-color: rgba( 255, 255, 255, 0.9 );
-				padding: 20px;
-			}
-			button {
-
-				border-radius: 4px;
-				background-color: #F40 !important;
-				padding: 12px !important;
-			}
-
-		</style>
-		<script src="https://cdn.rawgit.com/mrdoob/three.js/r87/build/three.js"></script>
-		<script src="https://cdn.rawgit.com/mrdoob/three.js/r87/examples/js/vr/WebVR.js"></script>
-		<script src="https://cdn.rawgit.com/dataarts/dat.guiVR/master/build/datguivr.js"></script>
-		<script src="OBJLoader.js"></script>
+  <head>
+    <title>VRController for Three.js (WebVR)</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 13px;
+        line-height: 20px;
+      }
+      header {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+      }
+      button {
+        border-radius: 4px;
+        background-color: #F40 !important;
+        padding: 12px !important;
+      }
+    </style>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r87/build/three.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r87/examples/js/vr/WebVR.js"></script>
+    <script src="https://cdn.rawgit.com/dataarts/dat.guiVR/master/build/datguivr.js"></script>
+    <script src="OBJLoader.js"></script>
+    <script src="Reflector.js"></script>
+    <script src="Refractor.js"></script>
+    <script src="Water2.js"></script>
     <script src="script.js"></script>
-	</head>
-	<body>
-		<script>
+  </head>
+  <body>
+    <script>
+      //  Hi! I think you’re going to like this VR stuff :)
+      //  This index.html file created by Jeff Nusz / http://custom-logic.com
+      //  refactored and commented by Stewart Smith / http://stewartsmith.io
+      //  because this stuff is fun and you can learn it with us!
+      //  The real heart of this is VRController.js -- check it out!
 
+      //  Does this browser support the WebVR API?
+      //  Here’s how to download and configure one that does:
+      //  https://webvr.rocks
 
+      WEBVR.checkAvailability().catch(function(message) {
+        document.body.appendChild(WEBVR.getMessageContainer(message));
+      });
 
+      //  Regardless, let’s kick off the Three.js basics here:
 
-//  Hi! I think you’re going to like this VR stuff :)
-//  This index.html file created by Jeff Nusz / http://custom-logic.com
-//  refactored and commented by Stewart Smith / http://stewartsmith.io
-//  because this stuff is fun and you can learn it with us!
-//  The real heart of this is VRController.js -- check it out!
+      var camera, scene, renderer, controls;
 
+      var tree;
+      var treeMaterial;
+      var meshMaterialFive;
+      var rotation = 0;
 
+      //  We need a renderer.
 
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setClearColor(0x000000);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.vr.enabled = true;
+      renderer.vr.standing = true;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      document.body.appendChild(renderer.domElement);
 
-//  Does this browser support the WebVR API?
-//  Here’s how to download and configure one that does:
-//  https://webvr.rocks
+      //  Once we create the camera we’ll attach it to the scene. This is usually
+      //  not necessary, but we’re going to attach a “head” to the camera that casts
+      //  a shadow so you can see evidence of your own presence.
 
-WEBVR.checkAvailability().catch( function( message ){
+      camera = new THREE.PerspectiveCamera(
+        50,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      scene = new THREE.Scene();
+      scene.add(camera);
 
-	document.body.appendChild( WEBVR.getMessageContainer( message ))
-})
+      //  This button is important. It toggles between normal in-browser view
+      //  and the brand new WebVR in-your-goggles view!
 
+      WEBVR.getVRDisplay(function(display) {
+        renderer.vr.setDevice(display);
+        document.body.appendChild(
+          WEBVR.getButton(display, renderer.domElement)
+        );
+      });
 
-//  Regardless, let’s kick off the Three.js basics here:
+      //  Should things change in the future we’ve got you covered:
 
-var camera, scene, renderer, controls
+      function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+      window.addEventListener("resize", onWindowResize, false);
 
-var tree
-var treeMaterial
+      //  This shortcut will be useful for later on down the road...
 
-//  We need a renderer.
+      applyDown = function(obj, key, value) {
+        obj[key] = value;
+        if (obj.children !== undefined && obj.children.length > 0) {
+          obj.children.forEach(function(child) {
+            applyDown(child, key, value);
+          });
+        }
+      };
+      castShadows = function(obj) {
+        applyDown(obj, "castShadow", true);
+      };
+      receiveShadows = function(obj) {
+        applyDown(obj, "receiveShadow", true);
+      };
 
-renderer = new THREE.WebGLRenderer({ antialias: true })
-renderer.setClearColor( 0x000000 )
-renderer.setPixelRatio( window.devicePixelRatio )
-renderer.setSize( window.innerWidth, window.innerHeight )
-renderer.vr.enabled  = true
-renderer.vr.standing = true
-renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
-document.body.appendChild( renderer.domElement )
+      //  Ok, we’ve got the basic Three.js overhead out of the way.
+      //  Now let’s add some stuff to our empty scene.
 
+      var light = new THREE.DirectionalLight(0xffffff, .5, 100);
+      light.position.set(1, 10, -0.5);
+      light.castShadow = true;
+      light.shadow.mapSize.width = 2048;
+      light.shadow.mapSize.height = 2048;
+      light.shadow.camera.near = 1;
+      light.shadow.camera.far = 12;
+      scene.add(light);
 
-//  Once we create the camera we’ll attach it to the scene. This is usually
-//  not necessary, but we’re going to attach a “head” to the camera that casts
-//  a shadow so you can see evidence of your own presence.
+      //scene.add( new THREE.HemisphereLight( 0x909090, 0x404040 ))
 
-camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 1000 )
-scene  = new THREE.Scene()
-scene.add( camera )
+      //this is the red spotlight
+      var spotLight = new THREE.SpotLight(0xff0000);
+      spotLight.position.set(100, 200, 100);
+      spotLight.angle = Math.PI / 6;
+      spotLight.penumbra = 0.9;
+      scene.add(spotLight);
+      //light container
+      lightContainer = new THREE.Object3D();
+      lightContainer.add(spotLight);
+      scene.add(lightContainer);
 
+      var floor = new THREE.Mesh(
+        new THREE.PlaneBufferGeometry(6, 6, 12, 12),
+        new THREE.MeshStandardMaterial({
+          roughness: 1.0,
+          metalness: 0.0,
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.8
+        })
+      );
+      floor.rotation.x = Math.PI / -2;
+      floor.receiveShadow = true;
+      //scene.add( floor )
 
-//  This button is important. It toggles between normal in-browser view
-//  and the brand new WebVR in-your-goggles view!
+      var wireframe = new THREE.Mesh(
+        floor.geometry.clone(),
+        new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          wireframe: true
+        })
+      );
+      wireframe.rotation.x = Math.PI / -2;
+      wireframe.position.y = -0.001;
+      //scene.add( wireframe )
 
-WEBVR.getVRDisplay( function( display ){
+      //  Your head is going to cast a shadow.
+      //  You won’t see this sphere because it’s single-sided be default
+      //  and the camera is sitting on the inside ;)
 
-	renderer.vr.setDevice( display )
-	document.body.appendChild( WEBVR.getButton( display, renderer.domElement ))
-})
-
-
-//  Should things change in the future we’ve got you covered:
-
-function onWindowResize(){
-
-	camera.aspect = window.innerWidth / window.innerHeight
-	camera.updateProjectionMatrix()
-	renderer.setSize( window.innerWidth, window.innerHeight )
-}
-window.addEventListener( 'resize', onWindowResize, false )
-
-
-//  This shortcut will be useful for later on down the road...
-
-applyDown = function( obj, key, value ){
-
-	obj[ key ] = value
-	if( obj.children !== undefined && obj.children.length > 0 ){
-
-		obj.children.forEach( function( child ){
-
-			applyDown( child, key, value )
-		})
-	}
-}
-castShadows = function( obj ){
-
-	applyDown( obj, 'castShadow', true )
-}
-receiveShadows = function( obj ){
-
-	applyDown( obj, 'receiveShadow', true )
-}
-
-
-
-
-//  Ok, we’ve got the basic Three.js overhead out of the way.
-//  Now let’s add some stuff to our empty scene.
-
-var light = new THREE.DirectionalLight( 0xFFFFFF, 1, 100 )
-light.position.set(  1, 10, -0.5 )
-light.castShadow = true
-light.shadow.mapSize.width  = 2048
-light.shadow.mapSize.height = 2048
-light.shadow.camera.near    =    1
-light.shadow.camera.far     =   12
-scene.add( light )
-
-scene.add( new THREE.HemisphereLight( 0x909090, 0x404040 ))
-
-
-var floor = new THREE.Mesh(
-
-	new THREE.PlaneBufferGeometry( 6, 6, 12, 12 ),
-	new THREE.MeshStandardMaterial({
-
-		roughness: 1.0,
-		metalness: 0.0,
-		color: 0xFFFFFF,
-		transparent: true,
-		opacity: 0.8
-	})
-)
-floor.rotation.x = Math.PI / -2
-floor.receiveShadow = true
-//scene.add( floor )
-
-
-var wireframe = new THREE.Mesh(
-
-	floor.geometry.clone(),
-	new THREE.MeshBasicMaterial({
-
-		color: 0xFFFFFF,
-		wireframe: true
-	})
-)
-wireframe.rotation.x = Math.PI / -2
-wireframe.position.y = -0.001
-//scene.add( wireframe )
-
-
-//  Your head is going to cast a shadow.
-//  You won’t see this sphere because it’s single-sided be default
-//  and the camera is sitting on the inside ;)
-
-/* var head = new THREE.Mesh(
+      /* var head = new THREE.Mesh(
 
 	new THREE.OctahedronGeometry( 0.08913, 2 ),
 	new THREE.MeshStandardMaterial()
@@ -194,294 +185,281 @@ wireframe.position.y = -0.001
 head.castShadow = true
 camera.add( head ) */
 
+      var torus = new THREE.Mesh(
+        new THREE.TorusKnotGeometry(0.4, 0.15, 256, 32),
+        new THREE.MeshStandardMaterial({ roughness: 0.01, metalness: 0.2 })
+      );
+      torus.position.set(-0.25, 1.4, -1.5);
+      torus.castShadow = true;
+      torus.receiveShadow = true;
+      //you can put the torus back in here if you want
+      //scene.add( torus )
 
-var torus = new THREE.Mesh(
+      //CUBE MAP CODE/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      //textures
+      //var r = "public/js/Bridge2/";
+      //var urls = [r + "posx.jpg", r + "negx.jpg",
+      //  r + "posy.jpg", r + "negy.jpg",
+      //  r + "posz.jpg", r + "negz.jpg"
+      //];
+      var urls = [
+        "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fposx.jpg?1557524480549",
+        "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fnegx.jpg?1557524416837",
+        "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fposy.jpg?1557524480260",
+        "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fnegy.jpg?1557524480488",
+        "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fposz.jpg?1557524480996",
+        "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fnegz.jpg?1557524480654"
+      ];
+      textureCube = new THREE.CubeTextureLoader().load(urls);
+      textureCube.format = THREE.RGBFormat;
+      textureCube.mapping = THREE.CubeReflectionMapping;
+      textureCube.encoding = THREE.sRGBEncoding;
+      //material
+      treeMaterial = new THREE.MeshLambertMaterial({
+        envMap: textureCube,
+        emissive: 0xffffff
+        //wireframe: true
+      });
 
-	new THREE.TorusKnotGeometry( 0.4, 0.15, 256, 32 ),
-	new THREE.MeshStandardMaterial({ roughness: 0.01, metalness: 0.2 })
-)
-torus.position.set( -0.25, 1.4, -1.5 )
-torus.castShadow    = true
-torus.receiveShadow = true
-//you can put the torus back in here if you want
-//scene.add( torus )
+      //TOON MATERIAL////////////////////////////////////////////////////////////////////////////////////
+      //material
+      const fiveTone = new THREE.DataTexture(
+        Uint8Array.from([
+          0,
+          0,
+          0,
+          64,
+          64,
+          64,
+          128,
+          128,
+          128,
+          192,
+          192,
+          192,
+          255,
+          255,
+          255
+        ]),
+        5,
+        1,
+        THREE.RGBFormat
+      );
+      fiveTone.needsUpdate = true;
+      //emissive, shininess, specular
+      const material = new THREE.MeshToonMaterial({
+        gradientMap: fiveTone,
+        color: 0x5588ff,
+        shininess: 25,
+        emissive: 0x022222,
+        specular: 0xff0000,
+        flatShading: false
+      });
+      ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//CUBE MAP CODE/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//textures
-//var r = "public/js/Bridge2/";
-//var urls = [r + "posx.jpg", r + "negx.jpg",
-//  r + "posy.jpg", r + "negy.jpg",
-//  r + "posz.jpg", r + "negz.jpg"
-//];
-var urls = [
-  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fposx.jpg?1557524480549",
-  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fnegx.jpg?1557524416837",
-  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fposy.jpg?1557524480260",
-  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fnegy.jpg?1557524480488",
-  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fposz.jpg?1557524480996",
-  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fnegz.jpg?1557524480654"
-];
-textureCube = new THREE.CubeTextureLoader().load(urls);
-textureCube.format = THREE.RGBFormat;
-textureCube.mapping = THREE.CubeReflectionMapping;
-textureCube.encoding = THREE.sRGBEncoding;
-//material
-treeMaterial = new THREE.MeshLambertMaterial({
-  envMap: textureCube,
-  emissive: 0xffffff
-  //wireframe: true
-});
-      
-//TOON MATERIAL////////////////////////////////////////////////////////////////////////////////////
-//material
-const fiveTone = new THREE.DataTexture(
-  Uint8Array.from([
-    0,
-    0,
-    0,
-    64,
-    64,
-    64,
-    128,
-    128,
-    128,
-    192,
-    192,
-    192,
-    255,
-    255,
-    255
-  ]),
-  5,
-  1,
-  THREE.RGBFormat
-);
-fiveTone.needsUpdate = true;
-//emissive, shininess, specular
-const material = new THREE.MeshToonMaterial({
-  gradientMap: fiveTone,
-  color: 0x5588ff,
-  shininess: 25,
-  emissive: 0x022222,
-  specular: 0xff0000,
-  flatShading: false
-});
-///////////////////////////////////////////////////////////////////////////////////////////////////////
-      
-// //TRANSPARENT MATERIAL///////////////////////////////////////////////////////////////////////////////////
-//       meshMaterial = new THREE.MeshStandardMaterial({
-// //second level of control at the material level
-// color: "rgb(255,255,255)",
-// opacity: 0.75,
-// transparent: true,
-// depthWrite: true,
-// side: THREE.DoubleSide
-// //roughness: .25,
-// //metalness: .91,
-// //wireframe: true
-// });
+      meshMaterialFive = new THREE.MeshPhongMaterial({
+        color: 0x2194ce,
+        emissive: 0x0,
+        specular: 0xff0000,
+        shininess: 100,
+        transparent: true,
+        opacity: 0.75
+      });
 
-      
-//then you have to go put the treeMaterial for the tree
-//TREE://///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//loading an OBJ
-var loader = new THREE.OBJLoader();
-loader.load(
-  //'JASMIM+MANGA.obj', //tree
-  //"yourMesh.obj", //fox
-  //"starCreature.obj"
-  //NAME OF THE ASSET FROM GLITCH;
-  //the real one
-  //"https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2FstarCreature.obj?1557347759568",
-  //the scanned trees
-  "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fmap_d9ec16cc-067f-4d8a-b9fe-0fc9f3f0d2b1_densified_mesh_textured.obj?v=1587175496214",
-  //"https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2FProject%20Name.obj?v=1582520829442",
-  //"fatBuddha.obj",
-  //'model.obj',
-  function(object) {
-    //how you turn the tree ON
-    scene.add(object);
-    tree = object;
+      //then you have to go put the treeMaterial for the tree
+      //TREE://///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+      //loading an OBJ
+      var loader = new THREE.OBJLoader();
+      loader.load(
+        //'JASMIM+MANGA.obj', //tree
+        //"yourMesh.obj", //fox
+        //"starCreature.obj"
+        //NAME OF THE ASSET FROM GLITCH;
+        //the real one
+        //"https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2FstarCreature.obj?1557347759568",
+        //the scanned trees
+        "https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2Fmap_d9ec16cc-067f-4d8a-b9fe-0fc9f3f0d2b1_densified_mesh_textured.obj?v=1587175496214",
+        //"https://cdn.glitch.com/0fbd268f-7a9c-43b7-93ee-804d1f817d3d%2FProject%20Name.obj?v=1582520829442",
+        //"fatBuddha.obj",
+        //'model.obj',
+        function(object) {
+          //how you turn the tree ON
+          scene.add(object);
+          tree = object;
 
-    //person size
-    tree.scale.x = 1.05;
-    tree.scale.y = 1.05;
-    tree.scale.z = 1.05;
-    //person size
-    tree.translateZ(-2.5);
-    //tree.translateY(1);
-    
-    //all sorts of weird shit going on
-    // tree.scale.x = 4;
-    // tree.scale.y = 4;
-    // tree.scale.z = 4;
-    // tree.translateZ(-150);
-    // tree.translateY(1);
-    
+          //person size
+          tree.scale.x = 1.05;
+          tree.scale.y = 1.05;
+          tree.scale.z = 1.05;
+          //person size
+          tree.translateZ(-2.5);
+          //tree.translateY(1);
 
-    object.traverse(function(child) {
-      if (child instanceof THREE.Mesh) {
-        child.material = treeMaterial;
-        //meshMaterialTwo
+          //all sorts of weird shit going on
+          // tree.scale.x = 4;
+          // tree.scale.y = 4;
+          // tree.scale.z = 4;
+          // tree.translateZ(-150);
+          // tree.translateY(1);
+
+          object.traverse(function(child) {
+            if (child instanceof THREE.Mesh) {
+              child.material = material;
+              //meshMaterialTwo
+            }
+          });
+          tree.renderOrder = 0;
+        }
+      );
+      //TREE://///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      //  DAT GUI for WebVR is just one of the coolest things ever.
+      //  Huge, huge thanks to Jeff Nusz / http://custom-logic.com
+      //  and Michael Chang / http://minmax.design for making this!!
+      //  https://github.com/dataarts/dat.guiVR
+
+      dat.GUIVR.enableMouse(camera);
+      var gui = dat.GUIVR.create("Settings");
+      gui.position.set(0.2, 0.8, -1);
+      gui.rotation.set(Math.PI / -6, 0, 0);
+      //you can add the gui back if you want
+      //scene.add( gui )
+      gui
+        .add(torus.position, "x", -1, 1)
+        .step(0.001)
+        .name("Position X");
+      gui
+        .add(torus.position, "y", -1, 2)
+        .step(0.001)
+        .name("Position Y");
+      gui
+        .add(torus.rotation, "y", -Math.PI, Math.PI)
+        .step(0.001)
+        .name("Rotation")
+        .listen();
+      castShadows(gui);
+
+      //  Check this out: When THREE.VRController finds a new controller
+      //  it will emit a custom “vr controller connected” event on the
+      //  global window object. It uses this to pass you the controller
+      //  instance and from there you do what you want with it.
+
+      window.addEventListener("vr controller connected", function(event) {
+        //  Here it is, your VR controller instance.
+        //  It’s really a THREE.Object3D so you can just add it to your scene:
+
+        var controller = event.detail;
+        scene.add(controller);
+
+        //  HEY HEY HEY! This is important. You need to make sure you do this.
+        //  For standing experiences (not seated) we need to set the standingMatrix
+        //  otherwise you’ll wonder why your controller appears on the floor
+        //  instead of in your hands! And for seated experiences this will have no
+        //  effect, so safe to do either way:
+
+        controller.standingMatrix = renderer.vr.getStandingMatrix();
+
+        //  And for 3DOF (seated) controllers you need to set the controller.head
+        //  to reference your camera. That way we can make an educated guess where
+        //  your hand ought to appear based on the camera’s rotation.
+
+        controller.head = window.camera;
+
+        //  Right now your controller has no visual.
+        //  It’s just an empty THREE.Object3D.
+        //  Let’s fix that!
+
+        var meshColorOff = 0xdb3236, //  Red.
+          meshColorOn = 0xf4c20d, //  Yellow.
+          controllerMaterial = new THREE.MeshStandardMaterial({
+            color: meshColorOff
+          }),
+          controllerMesh = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.005, 0.05, 0.1, 6),
+            controllerMaterial
+          ),
+          handleMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(0.03, 0.1, 0.03),
+            controllerMaterial
+          );
+
+        controllerMaterial.flatShading = true;
+        controllerMesh.rotation.x = -Math.PI / 2;
+        handleMesh.position.y = -0.05;
+        controllerMesh.add(handleMesh);
+        controller.userData.mesh = controllerMesh; //  So we can change the color later.
+        controller.add(controllerMesh);
+        castShadows(controller);
+        receiveShadows(controller);
+
+        //  Allow this controller to interact with DAT GUI.
+
+        var guiInputHelper = dat.GUIVR.addInputObject(controller);
+        scene.add(guiInputHelper);
+
+        // BUTTON EVENTS /////////////////////////////////////////////////////////////
+        //  Button events. How easy is this?!
+        //  We’ll just use the “primary” button -- whatever that might be ;)
+        //  Check out the THREE.VRController.supported{} object to see
+        //  all the named buttons we’ve already mapped for you!
+
+        controller.addEventListener("primary press began", function(event) {
+          event.target.userData.mesh.material.color.setHex(meshColorOn);
+          guiInputHelper.pressed(true);
+        });
+        controller.addEventListener("primary press ended", function(event) {
+          event.target.userData.mesh.material.color.setHex(meshColorOff);
+          guiInputHelper.pressed(false);
+        });
+
+        ///////////////////////////////////////////////////////////////////////////////
+
+        //  Daddy, what happens when we die?
+
+        controller.addEventListener("disconnected", function(event) {
+          controller.parent.remove(controller);
+        });
+      });
+
+      function update() {
+        //  Here’s VRController’s UPDATE goods right here:
+        //  This one command in your animation loop is going to handle
+        //  all the VR controller business you need to get done!
+
+        THREE.VRController.update();
+        //THREE.VRController.verbosity = 1
+
+        //  And here’s your standard update and render stuff.
+        //  Nothing new to see here.
+
+        //rotating the sculpture
+        if (tree != null) {
+          //tree.rotation.y += 0.005
+        }
+        
+        //rotating the camera
+        rotation += 0.05;
+        //rotating spot light
+        lightContainer.position.y = 15;
+        lightContainer.position.x = Math.sin(rotation) * 100;
+        lightContainer.position.z = Math.cos(rotation) * 100;
+        //camera.lookAt( scene.position ); // the origin
+
+
+        torus.rotation.y += 0.002;
+        if (torus.rotation.y > Math.PI) torus.rotation.y -= Math.PI * 2; //  Keep DAT GUI display tidy!
+        renderer.render(scene, camera);
       }
-    });
-    tree.renderOrder = 0;
-  }
-);
-//TREE://///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-//  DAT GUI for WebVR is just one of the coolest things ever.
-//  Huge, huge thanks to Jeff Nusz / http://custom-logic.com
-//  and Michael Chang / http://minmax.design for making this!!
-//  https://github.com/dataarts/dat.guiVR
-
-dat.GUIVR.enableMouse( camera )
-var gui = dat.GUIVR.create( 'Settings' )
-gui.position.set( 0.2, 0.8, -1 )
-gui.rotation.set( Math.PI / -6, 0, 0 )
-//you can add the gui back if you want
-//scene.add( gui )
-gui.add( torus.position, 'x', -1, 1 ).step( 0.001 ).name( 'Position X' )
-gui.add( torus.position, 'y', -1, 2 ).step( 0.001 ).name( 'Position Y' )
-gui.add( torus.rotation, 'y', -Math.PI, Math.PI ).step( 0.001 ).name( 'Rotation' ).listen()
-castShadows( gui )
-
-
-
-
-//  Check this out: When THREE.VRController finds a new controller
-//  it will emit a custom “vr controller connected” event on the
-//  global window object. It uses this to pass you the controller
-//  instance and from there you do what you want with it.
-
-window.addEventListener( 'vr controller connected', function( event ){
-
-
-	//  Here it is, your VR controller instance.
-	//  It’s really a THREE.Object3D so you can just add it to your scene:
-
-	var controller = event.detail
-	scene.add( controller )
-
-
-	//  HEY HEY HEY! This is important. You need to make sure you do this.
-	//  For standing experiences (not seated) we need to set the standingMatrix
-	//  otherwise you’ll wonder why your controller appears on the floor
-	//  instead of in your hands! And for seated experiences this will have no
-	//  effect, so safe to do either way:
-
-	controller.standingMatrix = renderer.vr.getStandingMatrix()
-
-
-	//  And for 3DOF (seated) controllers you need to set the controller.head
-	//  to reference your camera. That way we can make an educated guess where
-	//  your hand ought to appear based on the camera’s rotation.
-
-	controller.head = window.camera
-
-
-	//  Right now your controller has no visual.
-	//  It’s just an empty THREE.Object3D.
-	//  Let’s fix that!
-
-	var
-	meshColorOff = 0xDB3236,//  Red.
-	meshColorOn  = 0xF4C20D,//  Yellow.
-	controllerMaterial = new THREE.MeshStandardMaterial({
-
-		color: meshColorOff
-	}),
-	controllerMesh = new THREE.Mesh(
-
-		new THREE.CylinderGeometry( 0.005, 0.05, 0.1, 6 ),
-		controllerMaterial
-	),
-	handleMesh = new THREE.Mesh(
-
-		new THREE.BoxGeometry( 0.03, 0.1, 0.03 ),
-		controllerMaterial
-	)
-
-	controllerMaterial.flatShading = true
-	controllerMesh.rotation.x = -Math.PI / 2
-	handleMesh.position.y = -0.05
-	controllerMesh.add( handleMesh )
-	controller.userData.mesh = controllerMesh//  So we can change the color later.
-	controller.add( controllerMesh )
-	castShadows( controller )
-	receiveShadows( controller )
-
-
-	//  Allow this controller to interact with DAT GUI.
-
-	var guiInputHelper = dat.GUIVR.addInputObject( controller )
-	scene.add( guiInputHelper )
-
-
-  // BUTTON EVENTS /////////////////////////////////////////////////////////////
-	//  Button events. How easy is this?!
-	//  We’ll just use the “primary” button -- whatever that might be ;)
-	//  Check out the THREE.VRController.supported{} object to see
-	//  all the named buttons we’ve already mapped for you!
-
-	controller.addEventListener( 'primary press began', function( event ){
-		event.target.userData.mesh.material.color.setHex( meshColorOn )
-		guiInputHelper.pressed( true )
-	})
-	controller.addEventListener( 'primary press ended', function( event ){
-		event.target.userData.mesh.material.color.setHex( meshColorOff )
-		guiInputHelper.pressed( false )
-	})
-  
-  ///////////////////////////////////////////////////////////////////////////////
-
-
-	//  Daddy, what happens when we die?
-
-	controller.addEventListener( 'disconnected', function( event ){
-
-		controller.parent.remove( controller )
-	})
-})
-
-
-
-
-function update(){
-
-
-	//  Here’s VRController’s UPDATE goods right here:
-	//  This one command in your animation loop is going to handle
-	//  all the VR controller business you need to get done!
-
-	THREE.VRController.update()
-  //THREE.VRController.verbosity = 1
-
-
-	//  And here’s your standard update and render stuff.
-	//  Nothing new to see here.
-  
-  //rotating the sculpture 
-  if (tree != null){
-  //tree.rotation.y += 0.005
-  }
-
-	torus.rotation.y += 0.002
-	if( torus.rotation.y > Math.PI ) torus.rotation.y -= ( Math.PI * 2 )//  Keep DAT GUI display tidy!
-	renderer.render( scene, camera )
-   
-}
-renderer.animate( update )
-
-
-		</script>
-		<header>
-			<strong>VRController</strong> for Three.js<br>
-			<a href="https://github.com/stewdio/THREE.VRController" target="_blank">View this source code on GitHub</a>.<br>
-			See also <a href="http://stewartsmith.io" target="_blank">Stewart Smith</a><br>
-			and <a href="https://moar.io" target="_blank">Moar Technologies Corp</a>.
-		</header>
-	</body>
+      renderer.animate(update);
+    </script>
+    <header>
+      <strong>VRController</strong> for Three.js<br />
+      <a href="https://github.com/stewdio/THREE.VRController" target="_blank"
+        >View this source code on GitHub</a
+      >.<br />
+      See also <a href="http://stewartsmith.io" target="_blank">Stewart Smith</a
+      ><br />
+      and <a href="https://moar.io" target="_blank">Moar Technologies Corp</a>.
+    </header>
+  </body>
 </html>
