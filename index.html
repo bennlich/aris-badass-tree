@@ -255,6 +255,31 @@ camera.add( head ) */
         specular: 0xff0000,
         flatShading: false
       });
+      
+    //REFLECTION/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    var params = {
+      color: "#ff0000", //#ff0000 red
+      scale: 0.5,
+      flowX: 0.5,
+      flowY: 0.5
+    };
+    var waterGeometry = new THREE.PlaneBufferGeometry(2000, 2000);
+    var water = new THREE.Water(waterGeometry, {
+      color: params.color,
+      scale: params.scale,
+      flowDirection: new THREE.Vector2(params.flowX, params.flowY),
+      textureWidth: 1024,
+      textureHeight: 1024
+    });
+    water.position.y = 1.5; //-98;
+    water.rotation.x = Math.PI * -0.5; //flips the whole water direction
+    water.scale.x = 10;
+    water.scale.y = 10;
+    //DOPENESS
+    //scene.add(water);
+    //the problem is that the water is not stereoscopic for some reason
+
+      
       ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
       meshMaterialFive = new THREE.MeshPhongMaterial({
@@ -304,7 +329,7 @@ camera.add( head ) */
 
           object.traverse(function(child) {
             if (child instanceof THREE.Mesh) {
-              child.material = material;
+              child.material = meshMaterialFive;
               //meshMaterialTwo
             }
           });
