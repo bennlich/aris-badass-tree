@@ -28,8 +28,8 @@
         padding: 12px !important;
       }
     </style>
-    <script src="https://cdn.rawgit.com/mrdoob/three.js/r87/build/three.js"></script>
-    <script src="https://cdn.rawgit.com/mrdoob/three.js/r87/examples/js/vr/WebVR.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r116/build/three.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r116/examples/jsm/webxr/VRButton.js" type="module"></script>
     <script src="https://cdn.rawgit.com/dataarts/dat.guiVR/master/build/datguivr.js"></script>
     <script src="OBJLoader.js"></script>
     <script src="Reflector.js"></script>
@@ -39,21 +39,8 @@
     <script src="script.js"></script>
   </head>
   <body>
-    <script>
-      //  Hi! I think you’re going to like this VR stuff :)
-      //  This index.html file created by Jeff Nusz / http://custom-logic.com
-      //  refactored and commented by Stewart Smith / http://stewartsmith.io
-      //  because this stuff is fun and you can learn it with us!
-      //  The real heart of this is VRController.js -- check it out!
-
-      //  Does this browser support the WebVR API?
-      //  Here’s how to download and configure one that does:
-      //  https://webvr.rocks
-
-      WEBVR.checkAvailability().catch(function(message) {
-        document.body.appendChild(WEBVR.getMessageContainer(message));
-      });
-
+    <script type="module">
+      import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
       //  Regardless, let’s kick off the Three.js basics here:
 
       var camera, scene, renderer, controls;
